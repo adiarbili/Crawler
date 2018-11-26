@@ -15,6 +15,16 @@ def request_source_code(url):
     return BeautifulSoup(source_code, 'html.parser')
 
 
+def extract_num(exp):
+    num = ""
+
+    for dig in exp:
+        if dig.isdigit() or dig == '.':
+            num += dig
+
+    return num
+
+
 def crawler(url, max_page):
     page = 0
 
@@ -22,18 +32,23 @@ def crawler(url, max_page):
     csv_file_name = 'firstQuery.csv'
 
     # open file with write permission.
-    csv_file = open(csv_file_name, 'w')
+    csv_file = open(csv_file_name, 'w', encoding="utf-8")
 
     # set fields list as input for csv.Dictwriter().
     field_names = ['href', 'text', 'rating']
 
     # create writer object,
-    writer = csv.DictWriter(csv_file, delimiter=',', quotechar='\\', quoting=csv.QUOTE_MINIMAL, doublequote=False,
+    writer = csv.DictWriter(csv_file, delimiter=',', escapechar="\\", quotechar='\\', quoting=csv.QUOTE_MINIMAL,
+                            doublequote=False,
                             fieldnames=field_names)
 
     # write columns' titles as dictionary.
-    writer.writerow({"href": "href", "text": "description", "rating": "positive rating"})
+    writer.writerow({"href": "Href", "text": "Description", "rating": "Rating %"})
 
+    # create empty list in order to sort it by seller's rating.
+    sorted_list = []
+
+    # i = 0
     # iterate pages until max_page.
     while page < max_page:
         try:
@@ -47,10 +62,10 @@ def crawler(url, max_page):
                 # get the description of link.
                 text = link.text
 
-                # get seller rating
+                # get seller rating.
                 seller_page = request_source_code(href)
                 inner_text_div = seller_page.find('div', {'id': "si-fb"}).text
-                rating = inner_text_div.split()[0]
+                rating = float(extract_num(inner_text_div.split()[0]))
 
                 # create a data dictionary as an input to writer.writerow().
                 data = dict(
@@ -60,12 +75,17 @@ def crawler(url, max_page):
                     # there for we decode bytes to a string again.
                     href=href.encode("utf-8").decode("utf-8").strip(),
                     text=text.encode("utf-8").decode("utf-8").strip(),
-                    rating=rating.encode("utf-8").decode("utf-8").strip())
+                    rating=rating)
 
-                # write the data to csv file and print it.
-                writer.writerow(data)
+                # append the data dictionary to sorted_list.
+                sorted_list.append(data)
+
                 print(data)
-
+                '''
+                i += 1
+                if i >= 10:
+                    break
+                '''
             page += 1
 
             # get forward and backward buttons,
@@ -77,9 +97,16 @@ def crawler(url, max_page):
             print("Cause of failure: {}".format(e))
             sys.exit(1)
 
+    # create ordered list by rating descending
+    sorted_list = sorted(sorted_list, key=lambda k: k['rating'], reverse=True)
+
+    # write the data to csv file
+    for data in sorted_list:
+        writer.writerow(data)
+
 
 # define a query for ebay website.
-query = "https://www.ebay.com/sch/i.html?_fsrp=1&_nkw=vehicle+camera+dash+board&_sacat=0" \
-        "&_from=R40&rt=nc&LH_TitleDesc=0&LH_ItemCondition=3"
+query = "https://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=camera+dash+board&" \
+        "_sacat=0&LH_TitleDesc=0&_fsrp=1&_odkw=camera+dashboard&_osacat=0&rt=nc&_blrs=spell_check&LH_TitleDesc=0"
 
 crawler(query, 1)
