@@ -38,8 +38,8 @@ def crawler(url, max_page):
     field_names = ['href', 'text', 'rating']
 
     # create writer object,
-    writer = csv.DictWriter(csv_file, delimiter=',', escapechar="\\", quotechar='\\', quoting=csv.QUOTE_MINIMAL,
-                            doublequote=False,
+    writer = csv.DictWriter(csv_file, delimiter=',', escapechar="\\", quotechar='"', quoting=csv.QUOTE_MINIMAL,
+                            doublequote=True,
                             fieldnames=field_names)
 
     # write columns' titles as dictionary.
