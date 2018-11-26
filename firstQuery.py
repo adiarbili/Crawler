@@ -15,7 +15,7 @@ def request_source_code(url):
     return BeautifulSoup(source_code, 'html.parser')
 
 
-def crawler(max_page):
+def crawler(url, max_page):
     page = 0
 
     # file's name.
@@ -32,11 +32,7 @@ def crawler(max_page):
                             fieldnames=field_names)
 
     # write columns' titles as dictionary.
-    writer.writerow({"href": "href", "text": "description", "rating": "rating"})
-
-    # define a query for ebay website.
-    url = "https://www.ebay.com/sch/i.html?_fsrp=1&_nkw=vehicle+camera+dash+board&_sacat=0" \
-          "&_from=R40&rt=nc&LH_TitleDesc=0&LH_ItemCondition=3"
+    writer.writerow({"href": "href", "text": "description", "rating": "positive rating"})
 
     # iterate pages until max_page.
     while page < max_page:
@@ -54,7 +50,7 @@ def crawler(max_page):
                 # get seller rating
                 seller_page = request_source_code(href)
                 inner_text_div = seller_page.find('div', {'id': "si-fb"}).text
-                rating = inner_text_div.split(" ", 1)[0]
+                rating = inner_text_div.split()[0]
 
                 # create a data dictionary as an input to writer.writerow().
                 data = dict(
@@ -82,4 +78,8 @@ def crawler(max_page):
             sys.exit(1)
 
 
-crawler(1)
+# define a query for ebay website.
+query = "https://www.ebay.com/sch/i.html?_fsrp=1&_nkw=vehicle+camera+dash+board&_sacat=0" \
+        "&_from=R40&rt=nc&LH_TitleDesc=0&LH_ItemCondition=3"
+
+crawler(query, 1)
