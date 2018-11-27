@@ -5,6 +5,14 @@ import sys
 
 
 def request_source_code(url):
+    """
+    Input: url - query/link to a website.
+
+    Description: Performs a get request with the specified url.
+
+    Output: Source code of url as BeautifulSoup object
+    """
+
     # create a response object via get method which consists source code of the website.
     res_obj = requests.get(url)
 
@@ -15,6 +23,16 @@ def request_source_code(url):
     return BeautifulSoup(source_code, 'html.parser')
 
 
+def extract_num(exp):
+    num = ""
+
+    for dig in exp:
+        if dig.isdigit():
+            num += dig
+
+    return num
+
+
 def crawler(url, max_page):
     page = 0
 
@@ -22,18 +40,21 @@ def crawler(url, max_page):
     csv_file_name = 'secondQuery.csv'
 
     # open file with write permission.
-    csv_file = open(csv_file_name, 'w')
+    csv_file = open(csv_file_name, 'w', encoding="utf-8")
 
     # set fields list as input for csv.Dictwriter().
     field_names = ['href', 'text', 'feedbacks_amount']
 
     # create writer object,
-    writer = csv.DictWriter(csv_file, delimiter=',', quotechar='\\', quoting=csv.QUOTE_MINIMAL, doublequote=False,
-                            fieldnames=field_names)
+    writer = csv.DictWriter(csv_file, delimiter=',', escapechar="\\", quotechar='"', quoting=csv.QUOTE_MINIMAL,
+                            doublequote=False, fieldnames=field_names)
 
     # write columns' titles as dictionary.
     writer.writerow({"href": "href", "text": "description", "feedbacks_amount": "feedbacks amount"})
 
+    # create empty list in order to sort it by seller's feedback.
+    sorted_list = []
+    # i = 0
     # iterate pages until max_page.
     while page < max_page:
         try:
@@ -48,24 +69,18 @@ def crawler(url, max_page):
                 text = link.text
 
                 # get seller rating
-                seller_page = request_source_code(href)
-                #seller_profile_href = seller_page.find('a', {'id': "mbgLink"}).href
-                #seller_profile_src_code = request_source_code(seller_profile_href)
-                #seller_profile_href = seller_page.find('div', {'class': "mbg vi-VR-margBtm3"})
+                item_page = request_source_code(href)
+                seller_profile_href = item_page.find('a', {'id': "mbgLink"}).get('href')
+                seller_profile_src_code = request_source_code(seller_profile_href)
+                # seller_profile_href = seller_page.find('div', {'class': "mbg vi-VR-margBtm3"})
 
-                seller_data_href = seller_page.find('span', {'class' : 'mbg-l'}).find('a').get('href')
-                seller_profile_src_code = request_source_code(seller_data_href)
-                feedback_table = seller_profile_src_code.find_all('a', {'id' : 'RFRId'})
+                # seller_data_href = item_page.find('span', {'class' : 'mbg-l'}).find('a').get('href')
+                # seller_profile_src_code = request_source_code(seller_data_href)
+                feedback_table = seller_profile_src_code.find('div', {'id': 'feedback_ratings'}).find_all('a')
 
-                positive = 0
-                negative = 0
+                positive = extract_num(feedback_table[0].text)
 
-                if len(feedback_table) > 1:
-                    positive = feedback_table[2].text
-                    if len(feedback_table) != 2:
-                        negative = feedback_table[len(feedback_table) - 1].text
-                else:
-
+                negative = extract_num(feedback_table[2].text)
 
                 feedbacks_amount = int(positive) + int(negative)
 
@@ -79,10 +94,15 @@ def crawler(url, max_page):
                     text=text.encode("utf-8").decode("utf-8").strip(),
                     feedbacks_amount=feedbacks_amount)
 
-                # write the data to csv file and print it.
-                writer.writerow(data)
-                print(data)
+                # append the data dictionary to sorted_list.
+                sorted_list.append(data)
 
+                print(data)
+                '''
+                i += 1
+                if i >= 2:
+                    break
+                '''
             page += 1
 
             # get forward and backward buttons,
@@ -94,9 +114,15 @@ def crawler(url, max_page):
             print("Cause of failure: {}".format(e))
             sys.exit(1)
 
+    # create ordered list by rating descending
+    sorted_list = sorted(sorted_list, key=lambda k: k['feedbacks_amount'], reverse=True)
+
+    # write the data to csv file
+    for line in sorted_list:
+        writer.writerow(line)
+
 
 # define a query for ebay website.
-query = "https://www.ebay.com/sch/i.html?_fsrp=1&_nkw=vehicle+camera+dash+board&_sacat=0" \
-        "&_from=R40&rt=nc&LH_TitleDesc=0&LH_ItemCondition=3"
+query = "https://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=dash+board+camera&_sacat=0"
 
 crawler(query, 1)

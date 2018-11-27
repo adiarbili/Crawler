@@ -5,6 +5,14 @@ import sys
 
 
 def request_source_code(url):
+    """
+    Input: url - query/link to a website.
+
+    Description: Performs a get request with the specified url.
+
+    Output: Source code of url as BeautifulSoup object
+    """
+
     # create a response object via get method which consists source code of the website.
     res_obj = requests.get(url)
 
@@ -39,8 +47,7 @@ def crawler(url, max_page):
 
     # create writer object,
     writer = csv.DictWriter(csv_file, delimiter=',', escapechar="\\", quotechar='"', quoting=csv.QUOTE_MINIMAL,
-                            doublequote=True,
-                            fieldnames=field_names)
+                            doublequote=False, fieldnames=field_names)
 
     # write columns' titles as dictionary.
     writer.writerow({"href": "Href", "text": "Description", "rating": "Rating %"})
@@ -101,12 +108,12 @@ def crawler(url, max_page):
     sorted_list = sorted(sorted_list, key=lambda k: k['rating'], reverse=True)
 
     # write the data to csv file
-    for data in sorted_list:
-        writer.writerow(data)
+    for line in sorted_list:
+        writer.writerow(line)
 
 
 # define a query for ebay website.
-query = "https://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=camera+dash+board&" \
-        "_sacat=0&LH_TitleDesc=0&_fsrp=1&_odkw=camera+dashboard&_osacat=0&rt=nc&_blrs=spell_check&LH_TitleDesc=0"
+# search for "dash board camera"
+query = "https://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=dash+board+camera&_sacat=0"
 
 crawler(query, 1)
