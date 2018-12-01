@@ -47,7 +47,7 @@ def crawler(url, max_page):
 
     # create writer object,
     writer = csv.DictWriter(csv_file, delimiter=',', escapechar="\\", quotechar='"', quoting=csv.QUOTE_MINIMAL,
-                            doublequote=False, fieldnames=field_names)
+                            doublequote=True, fieldnames=field_names)
 
     # write columns' titles as dictionary.
     writer.writerow({"href": "Href", "text": "Description", "rating": "Rating %"})
@@ -71,8 +71,13 @@ def crawler(url, max_page):
 
                 # get seller rating.
                 seller_page = request_source_code(href)
-                inner_text_div = seller_page.find('div', {'id': "si-fb"}).text
-                rating = float(extract_num(inner_text_div.split()[0]))
+                inner_text_div = seller_page.find('div', {'id': "si-fb"})
+
+                # if seller_page.find() didn't find the div then, find() returns "None".
+                if inner_text_div is not None:
+                    rating = float(extract_num(inner_text_div.text.split()[0]))
+                else:  # because seller doesn't have rating we define it as zero.
+                    rating = 0
 
                 # create a data dictionary as an input to writer.writerow().
                 data = dict(
@@ -116,4 +121,4 @@ def crawler(url, max_page):
 # search for "dash board camera"
 query = "https://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=dash+board+camera&_sacat=0"
 
-crawler(query, 1)
+crawler(query, 2)
