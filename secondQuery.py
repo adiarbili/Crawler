@@ -125,4 +125,4 @@ def crawler(url, max_page):
 # define a query for ebay website.
 query = "https://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=dash+board+camera&_sacat=0"
 
-crawler(query, 1)
+crawler(query, 2)
