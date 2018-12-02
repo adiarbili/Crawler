@@ -54,7 +54,7 @@ def crawler(url, max_page):
 
     # create empty list in order to sort it by seller's feedback.
     sorted_list = []
-    # i = 0
+    i = 1
     # iterate pages until max_page.
     while page < max_page:
         try:
@@ -68,14 +68,11 @@ def crawler(url, max_page):
                 # get the description of link.
                 text = link.text
 
-                # get seller rating
+                # get seller feedbacks
                 item_page = request_source_code(href)
                 seller_profile_href = item_page.find('a', {'id': "mbgLink"}).get('href')
                 seller_profile_src_code = request_source_code(seller_profile_href)
-                # seller_profile_href = seller_page.find('div', {'class': "mbg vi-VR-margBtm3"})
 
-                # seller_data_href = item_page.find('span', {'class' : 'mbg-l'}).find('a').get('href')
-                # seller_profile_src_code = request_source_code(seller_data_href)
                 feedback_table = seller_profile_src_code.find('div', {'id': 'feedback_ratings'}).find_all('a')
 
                 positive = extract_num(feedback_table[0].text)
@@ -97,9 +94,10 @@ def crawler(url, max_page):
                 # append the data dictionary to sorted_list.
                 sorted_list.append(data)
 
-                print(data)
-                '''
+                print("{}. {}".format(i, data))
                 i += 1
+                '''
+                
                 if i >= 2:
                     break
                 '''

@@ -33,24 +33,54 @@ def extract_num(exp):
     return num
 
 
+def get_ratring(source_code):
+    # get seller rating.
+    inner_text_div = source_code.find('div', {'id': "si-fb"})
+
+    # if seller_page.find() didn't find the div then, find() returns "None".
+    if inner_text_div is not None:
+        rating = float(extract_num(inner_text_div.text.split()[0]))
+    else:  # because seller doesn't have rating we define it as zero.
+        rating = 0
+
+    return rating
+
+
+def get_feedbacks(source_code):
+    # get seller feedbacks
+    seller_profile_href = source_code.find('a', {'id': "mbgLink"}).get('href')
+    seller_profile_src_code = request_source_code(seller_profile_href)
+
+    feedback_table = seller_profile_src_code.find('div', {'id': 'feedback_ratings'}).find_all('a')
+
+    positive = extract_num(feedback_table[0].text)
+
+    negative = extract_num(feedback_table[2].text)
+
+    feedbacks_amount = int(positive) + int(negative)
+
+    return feedbacks_amount
+
+
 def crawler(url, max_page):
     page = 0
 
     # file's name.
-    csv_file_name = 'firstQuery.csv'
+    csv_file_name = 'thirdQuery.csv'
 
     # open file with write permission.
     csv_file = open(csv_file_name, 'w', encoding="utf-8")
 
     # set fields list as input for csv.Dictwriter().
-    field_names = ['href', 'text', 'rating']
+    field_names = ['href', 'text', 'rating', 'feedbacks_amount']
 
     # create writer object,
     writer = csv.DictWriter(csv_file, delimiter=',', escapechar="\\", quotechar='"', quoting=csv.QUOTE_MINIMAL,
                             doublequote=True, fieldnames=field_names)
 
     # write columns' titles as dictionary.
-    writer.writerow({"href": "Href", "text": "Description", "rating": "Rating %"})
+    writer.writerow(
+        {"href": "Href", "text": "Description", "rating": "Rating %", "feedbacks_amount": "feedbacks amount"})
 
     # create empty list in order to sort it by seller's rating.
     sorted_list = []
@@ -69,31 +99,28 @@ def crawler(url, max_page):
                 # get the description of link.
                 text = link.text
 
-                # get seller rating.
-                item_page = request_source_code(href)
-                inner_text_div = item_page.find('div', {'id': "si-fb"})
+                item_page_source_code = request_source_code(href)
 
-                # if seller_page.find() didn't find the div then, find() returns "None".
-                if inner_text_div is not None:
-                    rating = float(extract_num(inner_text_div.text.split()[0]))
-                else:  # because seller doesn't have rating we define it as zero.
-                    rating = 0
+                rating = get_ratring(item_page_source_code)
+                feedbacks_amount = get_feedbacks(item_page_source_code)
 
-                # create a data dictionary as an input to writer.writerow().
-                data = dict(
+                if rating > 99 and feedbacks_amount > 500:
+                    # create a data dictionary as an input to writer.writerow().
+                    data = dict(
 
-                    # remove leading and trailing spaces, and convert to utf-8 format.
-                    # after encoding with utf-8 we get a string of byte object, the 'b' prefix indicates it
-                    # there for we decode bytes to a string again.
-                    href=href.encode("utf-8").decode("utf-8").strip(),
-                    text=text.encode("utf-8").decode("utf-8").strip(),
-                    rating=rating)
+                        # remove leading and trailing spaces, and convert to utf-8 format.
+                        # after encoding with utf-8 we get a string of byte object, the 'b' prefix indicates it
+                        # there for we decode bytes to a string again.
+                        href=href.encode("utf-8").decode("utf-8").strip(),
+                        text=text.encode("utf-8").decode("utf-8").strip(),
+                        rating=rating,
+                        feedbacks_amount=feedbacks_amount)
 
-                # append the data dictionary to sorted_list.
-                sorted_list.append(data)
+                    # append the data dictionary to sorted_list.
+                    sorted_list.append(data)
 
-                print("{}. {}".format(i, data))
-                i += 1
+                    print("{}. {}".format(i, data))
+                    i += 1
                 '''
                 i += 1
                 if i >= 10:
@@ -122,4 +149,4 @@ def crawler(url, max_page):
 # search for "dash board camera"
 query = "https://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=dash+board+camera&_sacat=0"
 
-crawler(query, 2)
+crawler(query, 1)
