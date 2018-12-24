@@ -20,4 +20,4 @@
     -  Links to cameras.
     -  Description of the camera's link.
     -  Rating of the seller.
-    -  feedbacks' amount of the seller.         
+    -  feedbacks' amount of the seller.
