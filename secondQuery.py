@@ -2,6 +2,8 @@ from bs4 import BeautifulSoup
 import requests
 import csv
 import sys
+import time
+import traceback
 
 
 def request_source_code(url):
@@ -21,6 +23,7 @@ def request_source_code(url):
 
     # convert the source code of the website to an soup object which can find all html elements.
     return BeautifulSoup(source_code, 'html.parser')
+    # return BeautifulSoup(source_code, 'html5lib')
 
 
 def extract_num(exp):
@@ -31,6 +34,49 @@ def extract_num(exp):
             num += dig
 
     return num
+
+
+def get_feedbacks(source_code):
+    # get seller feedbacks
+    seller_profile_href = source_code.find('a', {'id': "mbgLink"}).get('href')
+
+    feedbacks_amount = 0
+
+    seller_score = int(source_code.find('span', {'class': "mbg-l"}).find('a').text)
+
+    # Feedbacks' table must appear.
+    if seller_score != 0:
+
+        seller_profile_src_code = request_source_code(seller_profile_href)
+
+        count_tries = 1
+        feedback_table_found = False
+
+        while count_tries <= 10 and not feedback_table_found:
+            # if seller_profile_src_code.find('div', {'id': 'feedback_ratings'}) is None:
+            try:
+                feedback_table_links = seller_profile_src_code.find('div', {'id': 'feedback_ratings'}).find_all('a')
+
+                positive = extract_num(feedback_table_links[0].text)
+
+                negative = extract_num(feedback_table_links[2].text)
+
+                feedbacks_amount = int(positive) + int(negative)
+
+                feedback_table_found = True
+            except Exception as e:
+                # print("Cause of failure: {}".format(e))
+                print("Cause of failure: {}".format(traceback.print_exc()))
+                time.sleep(3)
+                seller_profile_src_code = request_source_code(seller_profile_href)
+                time.sleep(3)
+            # else: # can't be None because seller's score is not zero
+            #     seller_profile_src_code = request_source_code(seller_profile_href)
+            #     time.sleep(3)
+
+            count_tries += 1
+
+    return feedbacks_amount
 
 
 def crawler(url, max_page):
@@ -69,17 +115,8 @@ def crawler(url, max_page):
                 text = link.text
 
                 # get seller feedbacks
-                item_page = request_source_code(href)
-                seller_profile_href = item_page.find('a', {'id': "mbgLink"}).get('href')
-                seller_profile_src_code = request_source_code(seller_profile_href)
-
-                feedback_table = seller_profile_src_code.find('div', {'id': 'feedback_ratings'}).find_all('a')
-
-                positive = extract_num(feedback_table[0].text)
-
-                negative = extract_num(feedback_table[2].text)
-
-                feedbacks_amount = int(positive) + int(negative)
+                item_page_source_code = request_source_code(href)
+                feedbacks_amount = get_feedbacks(item_page_source_code)
 
                 # create a data dictionary as an input to writer.writerow().
                 data = dict(
@@ -109,8 +146,10 @@ def crawler(url, max_page):
             # request for the next page
             url = foraward_backward_btns[1].get('href')
         except requests.exceptions.RequestException as e:
-            print("Cause of failure: {}".format(e))
-            sys.exit(1)
+            print("Cause of failure: {}".format(traceback.print_exc()))
+            time.sleep(5)
+            # print("Cause of failure: {}".format(e))
+            # sys.exit(1)
 
     # create ordered list by rating descending
     sorted_list = sorted(sorted_list, key=lambda k: k['feedbacks_amount'], reverse=True)
@@ -123,4 +162,4 @@ def crawler(url, max_page):
 # define a query for ebay website.
 query = "https://www.ebay.com/sch/i.html?_from=R40&_trksid=m570.l1313&_nkw=dash+board+camera&_sacat=0"
 
-crawler(query, 2)
+crawler(query, 50)
