@@ -1,5 +1,4 @@
-import csv
-import sys
+import traceback
 import math
 import re
 
@@ -50,7 +49,6 @@ def TF(docs, terms):
 
     for term in terms:
         TF_term = []
-        # TF_term.append(TFtd(query, term))
         reg_term = '[^a-z]' + term + '[^a-z]|^' + term + '[^a-z]|[^a-z]' + term + '$|^' + term + '$'
         for doc in docs:
             TF_term.append(TFtd(doc, reg_term))
@@ -105,27 +103,27 @@ def calc_one_plus_log_TF(TF_list):
 
     return res
 
+try:
+    documents = read_file("documents.txt")
+    terms = read_file("terms.txt")
+except (OSError):
+    print(traceback.print_exc())
+else:
+    number_of_doc = len(documents)
 
-documents = read_file("documents.txt")
-terms = read_file("terms.txt")
-# documents = read_file("docs_hw1.txt")
-# terms = read_file("terms_hw1.txt")
+    TF_list, DF_list, log_IDF_list, one_plus_log_TF_list, TF_IDF = TF_IDF(documents, terms)
 
-number_of_doc = len(documents)
+    print("TF table:")
+    print(*TF_list, sep="\n", end="\n\n")
 
-TF_list, DF_list, log_IDF_list, one_plus_log_TF_list, TF_IDF = TF_IDF(documents, terms)
+    print("DF table:")
+    print(DF_list, end="\n\n")
 
-print("TF table:")
-print(*TF_list, sep="\n", end="\n\n")
+    print("log IDF table:")
+    print(log_IDF_list, end="\n\n")
 
-print("DF table:")
-print(DF_list, end="\n\n")
+    print("1+log(TF) table:")
+    print(*one_plus_log_TF_list, sep="\n", end="\n\n")
 
-print("log IDF table:")
-print(log_IDF_list, end="\n\n")
-
-print("1+log(TF) table:")
-print(*one_plus_log_TF_list, sep="\n", end="\n\n")
-
-print("TF-IDF table:")
-print(*TF_IDF, sep="\n", end="\n\n")
+    print("TF-IDF table:")
+    print(*TF_IDF, sep="\n", end="\n\n")
